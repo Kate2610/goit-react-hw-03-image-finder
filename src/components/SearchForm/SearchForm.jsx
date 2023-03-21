@@ -1,53 +1,78 @@
-import { useState } from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import styles from './SearchForm.module.scss';
 
-const SearchFrom = ({ onSearch }) => {
-  const [query, setQuery] = useState('');
+class SearchForm extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      query: '',
+      prevQuery: '',
+    };
+    this.handleSearchInput = this.handleSearchInput.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
 
-  const handleSearchInput = e => {
+  handleSearchInput(e) {
     const { value } = e.currentTarget;
+    this.setState({ query: value });
+  }
 
-    setQuery(value);
-  };
-
-  const handleSubmit = e => {
+  handleSubmit(e) {
     e.preventDefault();
+    const { query, prevQuery } = this.state;
 
-   
     if (!query.trim()) return;
 
-    onSearch(query);
+    if (query !== prevQuery) {
+      this.props.onSearch(query);
+      this.setState({ prevQuery: query });
+    }
+  }
 
-    resetForm();
-  };
+  render() {
+    const { query } = this.state;
 
-  const resetForm = () => setQuery('');
+    return (
+      <form className={styles.SearchForm} onSubmit={this.handleSubmit}>
+        <button type="submit" className={styles['SearchForm-button']}>
+          <svg
+            stroke="currentColor"
+            fill="currentColor"
+            strokeWidth="0"
+            version="1.1"
+            viewBox="0 0 16 16"
+            height="25"
+            width="25"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M15.504 13.616l-3.79-3.223c-0.392-0.353-0.811-0.514-1.149-0.499 0.895-1.048 1.435-2.407 1.435-3.893 0-3.314-2.686-6-6-6s-6 2.686-6 6 2.686 6 6 6c1.486 0 2.845-0.54 3.893-1.435-0.016 0.338 0.146 0.757 0.499 1.149l3.223 3.79c0.552 0.613 1.453 0.665 2.003 0.115s0.498-1.452-0.115-2.003zM6 10c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4z"></path>
+          </svg>
+          <span className={styles['SearchForm-button-label']}></span>
+        </button>
 
-  return (
-    <form className={styles.SearchForm} onSubmit={handleSubmit}>
-      <button type="submit" className={styles['SearchForm-button']}>
-      <svg stroke="currentColor" fill="currentColor" stroke-width="0" version="1.1" viewBox="0 0 16 16" height="25" width="25" xmlns="http://www.w3.org/2000/svg"><path d="M15.504 13.616l-3.79-3.223c-0.392-0.353-0.811-0.514-1.149-0.499 0.895-1.048 1.435-2.407 1.435-3.893 0-3.314-2.686-6-6-6s-6 2.686-6 6 2.686 6 6 6c1.486 0 2.845-0.54 3.893-1.435-0.016 0.338 0.146 0.757 0.499 1.149l3.223 3.79c0.552 0.613 1.453 0.665 2.003 0.115s0.498-1.452-0.115-2.003zM6 10c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4z"></path></svg>
-        <span className={styles['SearchForm-button-label']}></span>
-      </button>
+        <input
+          className={styles['SearchForm-input']}
+          type="text"
+          name="query"
+          value={query}
+          onChange={this.handleSearchInput}
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+        />
+      </form>
+    );
+  }
+}
 
-      <input
-        className={styles['SearchForm-input']}
-        type="text"
-        name="query"
-        value={query}
-        onChange={handleSearchInput}
-        autoComplete="off"
-        autoFocus
-        placeholder="Search images and photos"
-      />
-    </form>
-  );
-};
-
-SearchFrom.propTypes = {
+SearchForm.propTypes = {
   onSearch: PropTypes.func.isRequired,
 };
 
-export default SearchFrom;
+export default SearchForm;
+
+
+
+
 

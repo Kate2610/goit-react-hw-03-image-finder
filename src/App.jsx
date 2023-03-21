@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { Component } from 'react';
 
 import Searchbar from './components/Searchbar';
 import ImageGallery from './components/ImageGallery';
@@ -10,98 +10,116 @@ import { ReactComponent as CloseIcon } from './images/close.svg';
 
 import fetchImages from './api/api-services';
 
-const App = () => {
-  const [images, setImages] = useState([]);
-  const [currentPage, setPage] = useState(1);
-  const [searchQuery, setQuery] = useState('');
-  const [isLoading, setLoading] = useState(false);
-  const [showModal, setModal] = useState(false);
-  const [largeImage, setlargeImage] = useState('');
-  const [error, setError] = useState(null);
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      images: [],
+      currentPage: 1,
+      searchQuery: '',
+      isLoading: false,
+      showModal: false,
+      largeImage: '',
+      error: null,
+    };
+  }
 
-  useEffect(() => {
-    if (!searchQuery) return;
+  componentDidMount() {
+    const { searchQuery } = this.state;
+    if (searchQuery) {
+      this.getImages();
+    }
+  }
 
-    getImages();
-    // eslint-disable-next-line
-  }, [searchQuery]);
+  componentDidUpdate(prevProps, prevState) {
+    const { searchQuery } = this.state;
+    if (prevState.searchQuery !== searchQuery) {
+      this.getImages();
+    }
+  }
 
-  const onChangeQuery = query => {
-    setImages([]);
-    setPage(1);
-    setQuery(query);
-    setLoading(false);
-    setModal(false);
-    setlargeImage('');
-    setError(null);
+  onChangeQuery = query => {
+    this.setState({
+      images: [],
+      currentPage: 1,
+      searchQuery: query,
+      isLoading: false,
+      showModal: false,
+      largeImage: '',
+      error: null,
+    });
   };
 
-  const getImages = async () => {
-    setLoading(true);
+  getImages = async () => {
+    const { currentPage, searchQuery } = this.state;
+    this.setState({ isLoading: true });
 
     try {
       const { hits } = await fetchImages(searchQuery, currentPage);
 
-      setImages(prev => [...prev, ...hits]);
-
-      setPage(prevPage => prevPage + 1);
+      this.setState(prevState => ({
+        images: [...prevState.images, ...hits],
+        currentPage: prevState.currentPage + 1,
+      }));
 
       if (currentPage !== 1) {
-        scrollOnLoadButton();
+        this.scrollOnLoadButton();
       }
     } catch (error) {
       console.log('Smth wrong with App fetch', error);
-      setError({ error });
+      this.setState({ error });
     } finally {
-      setLoading(false);
+      this.setState({ isLoading: false });
     }
   };
 
-  const handleGalleryItem = fullImageUrl => {
-    setlargeImage(fullImageUrl);
-    setModal(true);
+  handleGalleryItem = fullImageUrl => {
+    this.setState({ largeImage: fullImageUrl, showModal: true });
   };
 
-  const toggleModal = () => {
-    setModal(prevModal => !prevModal);
+  toggleModal = () => {
+    this.setState(prevState => ({ showModal: !prevState.showModal }));
   };
 
-  const scrollOnLoadButton = () => {
+  scrollOnLoadButton = () => {
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: 'smooth',
     });
   };
 
-  const needToShowLoadMore = images.length > 0 && images.length >= 12; // Нужны доп проверки;
+  needToShowLoadMore = () => {
+    const { images } = this.state;
+    return images.length > 0 && images.length >= 12;
+  };
 
-  return (
-    <>
-      <Searchbar onSearch={onChangeQuery} />
+  render() {
+    const { images, isLoading, showModal, largeImage, error } = this.state;
 
-      {images.length < 1}
+    return (
+      <>
+        <Searchbar onSearch={this.onChangeQuery} />
+        <ImageGallery images={images} onImageClick={this.handleGalleryItem} />
 
-      <ImageGallery images={images} onImageClick={handleGalleryItem} />
+        {this.needToShowLoadMore() && <Button onClick={this.getImages} />}
 
-      {needToShowLoadMore && <Button onClick={getImages} />}
+        {showModal && (
+          <Modal onClose={this.toggleModal}>
+            <div className="Close-box">
+              <IconButton onClick={this.toggleModal} aria-label="Close modal">
+                <CloseIcon width="20px" height="20px" fill="#7e7b7b" />
+              </IconButton>
+            </div>
+            <img src={largeImage} alt="" className="Modal-image" />
+          </Modal>
+        )}
 
-      {showModal && (
-        <Modal onClose={toggleModal}>
-          <div className="Close-box">
-            <IconButton onClick={toggleModal} aria-label="Close modal">
-              <CloseIcon width="20px" height="20px" fill="#7e7b7b" />
-            </IconButton>
-          </div>
-          <img src={largeImage} alt="" className="Modal-image" />
-        </Modal>
-      )}
+        {isLoading && <Loader />}
 
-      {isLoading && <Loader />}
-
-      {error }
-    </>
-  );
-};
+        {error}
+      </>
+    );
+  }
+}
 
 export default App;
-
